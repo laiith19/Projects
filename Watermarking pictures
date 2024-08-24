@@ -1,0 +1,72 @@
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image, ImageTk, ImageDraw, ImageFont
+
+class WatermarkApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Watermark Application")
+        
+        # Set up the GUI layout
+        self.upload_button = tk.Button(root, text="Upload Image", command=self.upload_image)
+        self.upload_button.pack()
+
+        self.watermark_button = tk.Button(root, text="Add Watermark", command=self.add_watermark, state=tk.DISABLED)
+        self.watermark_button.pack()
+
+        self.save_button = tk.Button(root, text="Save Image", command=self.save_image, state=tk.DISABLED)
+        self.save_button.pack()
+
+        self.canvas = tk.Canvas(root, width=1000, height=1000)
+        self.canvas.pack()
+        
+        self.image = None
+        self.tk_image = None
+        self.watermarked_image = None
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            self.image = Image.open(file_path)
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+            self.watermark_button.config(state=tk.NORMAL)
+
+    def add_watermark(self):
+        if self.image:
+            draw = ImageDraw.Draw(self.image)
+            width, height = self.image.size
+            
+            # Set up the watermark text and font
+            text = "Your Watermark"
+            font_size = 200  # Set a large font size
+            try:
+                font = ImageFont.truetype("arial.ttf", font_size) 
+            except IOError:
+                font = ImageFont.load_default() 
+                font_size = 20  
+
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            x = width - text_width - 10
+            y = height - text_height - 10
+            
+            draw.text((x, y), text, font=font, fill=(255, 255, 255, 128))
+            
+            self.watermarked_image = self.image
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+            self.save_button.config(state=tk.NORMAL)
+
+    def save_image(self):
+        if self.watermarked_image:
+            file_path = filedialog.asksaveasfilename(defaultextension=".png",
+                                                   filetypes=[("PNG files", "*.png"),
+                                                              ("All files", "*.*")])
+            if file_path:
+                self.watermarked_image.save(file_path)
+
+root = tk.Tk()
+app = WatermarkApp(root)
+root.mainloop()
